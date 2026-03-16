@@ -1,6 +1,7 @@
 // TODO
 // [ ] - Custom Error types
 // [ ] - Changing % to AND since the size in the powers of two
+// [ ] - change all errors to lowercase and no punctuations
 
 package queue
 
