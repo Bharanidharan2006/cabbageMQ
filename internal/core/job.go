@@ -1,3 +1,6 @@
+// TODO
+// [ ] - Remove job status and type(topic) as topic is determined the queue it is in and then the status is encoded in the tcp protocol
+
 package core
 
 type JobStatus string
@@ -18,7 +21,7 @@ const (
 // Payload - Payload of the Job as an array of bytes (can be converted to json)
 
 type Job struct {
-	ID      int
+	ID      uint64
 	Topic   string
 	Status  JobStatus
 	Payload []byte
