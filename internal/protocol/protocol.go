@@ -58,21 +58,18 @@ func (m *Message) constuctHeader(message []byte,topicLength uint8, payloadLength
 }  
 
 func (m *Message) Serialize() ([]byte, error) {
-	if len(m.payload) > math.MaxInt32 {
-		return nil, fmt.Errorf("payload: payload size is too large, size: %d", len(m.payload))
-	}
-	if len(m.topic) > math.MaxUint8 {
-		return nil, fmt.Errorf("topic: topic name is too long, length: %d", len(m.topic))
-	}
-
 	switch m.messageType {
 	case HEARTBEAT, QUEUE_EMPTY, QUEUE_FULL, TOPIC_NOT_FOUND, PUBLISHED:
-		topicLength := 0 // Setting these to zero, so even if the struct field accidently has data, it is not sent
-		payloadLength := 0
 		message := make([]byte, HEADER_SIZE)
-		m.constuctHeader(message, uint8(topicLength), uint32(payloadLength))
+		m.constuctHeader(message, uint8(0), uint32(0))
 		return message, nil
 	case PUBLISH, JOB:
+			if len(m.payload) > math.MaxInt32 {
+			return nil, fmt.Errorf("payload: payload size is too large, size: %d", len(m.payload))
+		}
+		if len(m.topic) > math.MaxUint8 {
+			return nil, fmt.Errorf("topic: topic name is too long, length: %d", len(m.topic))
+		}
 		// Message Types related to job acknowlegments and errors. SHould have the payloadlength as eight
 		topicLength := len(m.topic)
 		payloadLength := len(m.payload)
@@ -87,22 +84,26 @@ func (m *Message) Serialize() ([]byte, error) {
 		copy(message[idEnd: payloadEnd], m.payload)
 		return message, nil
 	case JOB_PROCESSING_SUCCESS, JOB_PROCESSING_FAIL:
+		if len(m.topic) > math.MaxUint8 {
+			return nil, fmt.Errorf("topic: topic name is too long, length: %d", len(m.topic))
+		}
 		topicLength := len(m.topic)
-		payloadLength := 0 
 		messageSize := HEADER_SIZE + topicLength + 8 // Isnt this gonna cause an overflow?
 		message := make([]byte, messageSize)
-		m.constuctHeader(message, uint8(topicLength), uint32(payloadLength))
+		m.constuctHeader(message, uint8(topicLength), uint32(0))
 		topicEnd := HEADER_SIZE + topicLength
 		copy(message[HEADER_SIZE:topicEnd], []byte(m.topic))
 		idEnd := topicEnd + 8
 		binary.BigEndian.PutUint64(message[topicEnd:idEnd], m.id)
 		return message, nil
 	case REQUEST:
-		payloadLength := 0
+		if len(m.topic) > math.MaxUint8 {
+			return nil, fmt.Errorf("topic: topic name is too long, length: %d", len(m.topic))
+		}
 		topicLength := len(m.topic)
 		messageSize := HEADER_SIZE + topicLength // Isnt this gonna cause an overflow?
 		message := make([]byte, messageSize)
-		m.constuctHeader(message, uint8(topicLength), uint32(payloadLength))
+		m.constuctHeader(message, uint8(topicLength), uint32(0))
 		topicEnd := HEADER_SIZE + topicLength
 		copy(message[HEADER_SIZE:topicEnd], []byte(m.topic))
 		return message, nil
